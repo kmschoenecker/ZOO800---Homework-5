@@ -4,6 +4,7 @@
 #Load libraries
 library(readxl)
 library(writexl)
+library(tidyverse)
 
 ##Problem 1 ----
 
@@ -38,3 +39,40 @@ lapply(X=second_fish_filenames_list, FUN=file.info)
 
 
 ##Problem 3 ----
+
+fish_output <- fish_csv %>%
+  filter(Species %in% c("Walleye", "Yellow Perch", "Smallmouth Bass")) %>%
+  filter(Lake %in% c("Michigan", "Erie")) %>%
+  select(-"Age_years") %>%
+  mutate("Length_mm" = Length_cm * 10) %>%
+  mutate("Length_group" = cut(Length_mm, breaks = c(0, 200, 400, 600, Inf)))
+  
+#not sure how to connect from the length group to species counts and then
+#the summary data, led to us separating them out
+species_counts <- fish_output %>%
+  count(Species, Length_group)
+
+#export counts as a csv
+write.csv(species_counts, "Outputs/species_counts.csv", row.names=FALSE)
+
+#summarize information
+
+species_year_sum <- fish_output %>%
+  group_by(Species, Year) %>%
+  summarise("Mean_weight" = mean(Weight_g), "Median_weight" = median(Weight_g), "Sample_size" = n())
+
+#export your new info as a csv
+
+write.csv(species_year_sum, "Outputs/species_year_sum.csv", row.names=FALSE)
+
+#quick plot of the fish
+
+Fish_plot <- species_year_sum %>%
+  ggplot(aes(x = Year, y = Mean_weight, col = Species)) +
+  geom_line()
+Fish_plot #view fish plot
+
+ggsave("Outputs/Fish_plot.png") #save as a png to your outputs folder
+
+##Problem 4 ----
+
